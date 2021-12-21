@@ -69,13 +69,13 @@ class WaypointUpdater(object):
         previous_coord = self.waypoints_2d[closest_index - 1]
         
         # Equation for an hyperplane through closest_coord
-        cl_vector = np.array(closest_coord)
+        cl_vect = np.array(closest_coord)
         prev_vect = np.array(previous_coord)
         pos_vect = np.array([x, y])
         
         # Compute a dot product between the above vectors. If the dot product is positive (meaning the waypoint 
         # is behind the car), replace it with the following point by updating its index. 
-        val = np.dot(cl_vector - prev_vect, pos_vect - cl_vect)
+        val = np.dot(cl_vect - prev_vect, pos_vect - cl_vect)
         
         if val > 0:
             # If the closest waypoint is behind us, get the next one. 
