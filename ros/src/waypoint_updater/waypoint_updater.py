@@ -67,11 +67,11 @@ class WaypointUpdater(object):
         y = self.pose.pose.position.y
         # The query method returns the closest point in our KDTree to our queried item (the car position)
         # and the index of that point. We only want the index and that's the meaning of [1] at the end. 
-        closest_idx = self.waypoint_tree.query([x, y], 1)[1]
+        closest_index = self.waypoint_tree.query([x, y], 1)[1]
         
         # Check that the closest index refers to a point ahead of the vehicle
-        closest_coord = self.waypoints_2d[closest_idx]
-        previous_coord = self.waypoints_2d[closest_idx - 1]
+        closest_coord = self.waypoints_2d[closest_index]
+        previous_coord = self.waypoints_2d[closest_index - 1]
         
         # Equation for an hyperplane through closest_coord
         cl_vect = np.array(closest_coord)
@@ -85,8 +85,8 @@ class WaypointUpdater(object):
         if val > 0:
             # If the closest waypoint is behind us, get the next one. 
             # Use the modulo operaation to never exceed the list length with the index position. 
-            closest_index = (closest_idx + 1) % len(self.waypoints_2d)
-        return closest_idx
+            closest_index = (closest_index + 1) % len(self.waypoints_2d)
+        return closest_index
     
     def publish_waypoints(self):
         final_lane = self.generate_lane()
@@ -101,25 +101,25 @@ class WaypointUpdater(object):
     
     def generate_lane(self):
         lane = Lane()
-        closest_idx = self.get_closest_waypoint_idx()
-        farthest_idx = closest_idx + LOOKAHEAD_WPS
-        base_waypoints = self.base_lane.waypoints[closest_idx:farthest_idx]
+        closest_index = self.get_closest_waypoint_index()
+        farthest_idx = closest_index + LOOKAHEAD_WPS
+        base_waypoints = self.base_line.waypoints[closest_index:farthest_idx]
         
         if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
             lane.waypoints = base_waypoints
         else:
-            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_idx)
+            lane.waypoints = self.decelerate_waypoints(base_waypoints, closest_index)
             
         return lane
     
-    def decelerate_waypoints(self, waypoints, closest_idx):
+    def decelerate_waypoints(self, waypoints, closest_index):
         temp = []
         for i, wp in enumerate(waypoints):
             
             p = Waypoint()
             p.pose = wp.pose
             
-            stop_idx = max(self.stopline_wp_idx - closest_idx -2, 0)
+            stop_idx = max(self.stopline_wp_idx - closest_index -2, 0)
             dist = self.distance(waypoints, i, stop_idx)
             vel = math.sqrt(2 * MAX_DECEL * dist)
             if vel < 1.:
@@ -139,7 +139,7 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
-        self.base_lane = waypoints
+        self.base_line = waypoints
         if not self.waypoints_2d:
             # Build a list of 2D coordinates for each waypoint to pass to KDTree (LOOKAHEAD_WPS data points of dimension 2)
             self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
